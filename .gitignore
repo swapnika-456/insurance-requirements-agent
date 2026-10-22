@@ -1,0 +1,48 @@
+# Environment Variables & Secrets
+.env
+.env.local
+.env.*.local
+*.env
+!*.env.example
+
+# Backend Local Data & Vector Store
+backend/data/
+data/
+*.db
+*.sqlite
+*.sqlite3
+
+# Python Virtual Environments & Caches
+venv/
+.venv/
+env/
+ENV/
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.coverage
+htmlcov/
+
+# ChromaDB Cache & Logs
+chroma/
+*.parquet
+
+# Flutter & Dart Build Artifacts
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+build/
+mobile/build/
+mobile/.dart_tool/
+flutter_application_1/
+
+# IDE & Editor Configs
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Operating System Files
+.DS_Store
+Thumbs.db
