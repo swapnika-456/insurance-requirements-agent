@@ -1,0 +1,35 @@
+# ==============================================================================
+# Insurance Requirements Agent (IRA) - Backend Dependencies
+# ==============================================================================
+# Python 3.11+ compatible
+
+# Core Web Framework & Data Validation
+fastapi>=0.110.0
+uvicorn[standard]>=0.28.0
+pydantic>=2.6.0
+pydantic-settings>=2.2.0
+python-multipart>=0.0.9
+
+# Database & ORM
+SQLAlchemy>=2.0.28
+aiosqlite>=0.20.0
+
+# Document Parsing & OCR
+PyMuPDF>=1.24.0
+pdfplumber>=0.11.0
+pytesseract>=0.3.10
+reportlab>=4.1.0
+
+# Vector Database & Information Retrieval
+chromadb>=0.4.24
+rank-bm25>=0.2.2
+
+# LLM & AI SDK
+google-genai>=0.1.0
+google-generativeai>=0.5.0
+
+# Utilities & Testing
+httpx>=0.27.0
+pytest>=8.1.0
+pytest-asyncio>=0.23.0
+python-dotenv>=1.0.1
