@@ -9,6 +9,7 @@ import 'package:go_router/go_router.dart';
 import '../../features/upload/presentation/upload_screen.dart';
 import '../../features/product_detail/presentation/product_detail_screen.dart';
 import '../../features/requirements/presentation/requirements_screen.dart';
+import '../../features/traceability/presentation/traceability_screen.dart';
 
 final appRouter = GoRouter(
   initialLocation: '/',
@@ -29,6 +30,13 @@ final appRouter = GoRouter(
       builder: (context, state) {
         final id = state.pathParameters['id']!;
         return RequirementsScreen(documentId: id);
+      },
+    ),
+    GoRoute(
+      path: '/traceability/:id',
+      builder: (context, state) {
+        final id = state.pathParameters['id']!;
+        return TraceabilityScreen(documentId: id);
       },
     ),
   ],

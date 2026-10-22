@@ -20,6 +20,7 @@ from app.services.llm.mock import MockLLMProvider
 from app.services.extraction import ExtractionService
 from app.services.retrieval import RetrievalService
 from app.services.requirements import RequirementsService
+from app.services.traceability import TraceabilityService
 
 
 def get_ingestion_service() -> IngestionService:
@@ -59,3 +60,16 @@ def get_requirements_service(
 ) -> RequirementsService:
     """Provides RequirementsService wired to LLM and Hybrid Retrieval."""
     return RequirementsService(llm_provider=llm, retrieval_service=retrieval)
+
+
+def get_traceability_service(
+    llm: LLMProvider = Depends(get_llm_provider),
+    requirements: RequirementsService = Depends(get_requirements_service),
+    extraction: ExtractionService = Depends(get_extraction_service)
+) -> TraceabilityService:
+    """Provides TraceabilityService wired to LLM, Requirements, and Extraction services."""
+    return TraceabilityService(
+        llm_provider=llm,
+        requirements_service=requirements,
+        extraction_service=extraction
+    )

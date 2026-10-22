@@ -79,6 +79,11 @@ class _RequirementsScreenState extends ConsumerState<RequirementsScreen> with Si
           onPressed: () => context.go('/product/${widget.documentId}'),
         ),
         actions: [
+          TextButton.icon(
+            onPressed: () => context.go('/traceability/${widget.documentId}'),
+            icon: const Icon(Icons.hub_outlined, color: Color(0xFF38BDF8), size: 16),
+            label: const Text('Traceability Matrix', style: TextStyle(color: Colors.white, fontSize: 12)),
+          ),
           IconButton(
             icon: const Icon(Icons.refresh),
             onPressed: () => ref.invalidate(requirementsProvider(widget.documentId)),
