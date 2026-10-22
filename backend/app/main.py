@@ -24,7 +24,9 @@ from app.core.config import settings
 from app.core.database import Base, engine
 from app.api.v1.documents import router as documents_router
 from app.api.v1.extraction import router as extraction_router
-from app.models.extraction import ProductExtractionRecord  # Ensure table registration
+from app.api.v1.requirements import router as requirements_router
+from app.models.extraction import ProductExtractionRecord
+from app.models.requirement import RequirementPackageRecord
 
 
 @asynccontextmanager
@@ -65,6 +67,7 @@ app.add_middleware(
 # Mount API Routers under /api/v1 prefix
 app.include_router(documents_router, prefix="/api/v1")
 app.include_router(extraction_router, prefix="/api/v1")
+app.include_router(requirements_router, prefix="/api/v1")
 
 
 @app.get("/", tags=["Health Check"])

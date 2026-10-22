@@ -18,11 +18,18 @@ from app.services.llm.base import LLMProvider
 from app.services.llm.gemini import GeminiProvider
 from app.services.llm.mock import MockLLMProvider
 from app.services.extraction import ExtractionService
+from app.services.retrieval import RetrievalService
+from app.services.requirements import RequirementsService
 
 
 def get_ingestion_service() -> IngestionService:
     """Provides a singleton-style IngestionService instance."""
     return IngestionService()
+
+
+def get_retrieval_service() -> RetrievalService:
+    """Provides RetrievalService for hybrid vector + keyword search."""
+    return RetrievalService()
 
 
 def get_llm_provider() -> LLMProvider:
@@ -44,3 +51,11 @@ def get_extraction_service(
 ) -> ExtractionService:
     """Provides ExtractionService wired to the configured LLM provider."""
     return ExtractionService(llm_provider=llm)
+
+
+def get_requirements_service(
+    llm: LLMProvider = Depends(get_llm_provider),
+    retrieval: RetrievalService = Depends(get_retrieval_service)
+) -> RequirementsService:
+    """Provides RequirementsService wired to LLM and Hybrid Retrieval."""
+    return RequirementsService(llm_provider=llm, retrieval_service=retrieval)

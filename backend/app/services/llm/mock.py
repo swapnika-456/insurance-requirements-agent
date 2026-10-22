@@ -16,6 +16,11 @@ from typing import Type, TypeVar, Optional, Any
 from pydantic import BaseModel
 
 from app.services.llm.base import LLMProvider, LLMResponse, StructuredLLMResponse
+from app.schemas.requirement import (
+    RequirementsPackage, BusinessRequirementsDocument, BusinessRuleItem,
+    FunctionalRequirementItem, NonFunctionalRequirementItem, UserStoryItem,
+    AcceptanceCriterion
+)
 from app.schemas.citation import Citation
 from app.schemas.product import (
     StructuredProductExtraction, CitedString, CoverageItem, DeductibleItem,
@@ -81,6 +86,18 @@ class MockLLMProvider(LLMProvider):
                 cost_usd=0.00013,
                 model_name=self.model_name,
                 latency_ms=15.0
+            )
+
+        if response_schema == RequirementsPackage:
+            data = self._generate_auto_requirements_package()
+            return StructuredLLMResponse(
+                data=data,
+                prompt_tokens=650,
+                completion_tokens=550,
+                total_tokens=1200,
+                cost_usd=0.00021,
+                model_name=self.model_name,
+                latency_ms=20.0
             )
 
         # Generic dummy fallback if any other schema is passed
@@ -285,3 +302,124 @@ class MockLLMProvider(LLMProvider):
             exclusions=[],
             endorsements=[]
         )
+
+    def _generate_auto_requirements_package(self) -> RequirementsPackage:
+        """Simulated requirements generation for Personal Auto policy."""
+        brd = BusinessRequirementsDocument(
+            document_title="Apex Personal Auto Delivery Specification (PA-2026-OH)",
+            scope="Implementation of quote, rate, and bind microservices for Ohio Personal Auto product.",
+            business_rules=[
+                BusinessRuleItem(
+                    rule_id="BR-001",
+                    name="Mandatory Split Limits Liability",
+                    description="Part A bodily injury liability must enforce minimum $250k/$500k limits, with $100k property damage.",
+                    citation=Citation(page_number=1, clause_reference="SECTION I", exact_quote="$250,000 per person / $500,000 per accident", confidence_score=0.99)
+                ),
+                BusinessRuleItem(
+                    rule_id="BR-002",
+                    name="Collision Deductible Gate",
+                    description="Part D collision coverage claims carry a mandatory non-waivable $500 deductible.",
+                    citation=Citation(page_number=1, clause_reference="Clause 2.2", exact_quote="A mandatory deductible of $500 applies to all collision claims", confidence_score=0.98)
+                ),
+                BusinessRuleItem(
+                    rule_id="BR-003",
+                    name="Driver Age Rating Tiers (RF-1)",
+                    description="Rating algorithm must multiply base rate by age factor: Tier 1 (18-20: 1.65), Tier 2 (21-24: 1.30), Tier 3 (25-64: 1.00), Tier 4 (65+: 1.15).",
+                    citation=Citation(page_number=2, clause_reference="Clause 3.1", exact_quote="Rating Factor RF-1 applies to driver age bands", confidence_score=0.97)
+                )
+            ],
+            functional_requirements=[
+                FunctionalRequirementItem(
+                    req_id="REQ-001",
+                    title="Underwriting Driver Age & History Validation",
+                    description="System must reject operators under 18 years and refer drivers with >1 at-fault accident in 36 months.",
+                    priority="High",
+                    citation=Citation(page_number=2, clause_reference="Rule UW-1", exact_quote="The minimum driver age is 18 years", confidence_score=0.99)
+                ),
+                FunctionalRequirementItem(
+                    req_id="REQ-002",
+                    title="Territory Rating Lookup Service",
+                    description="System must query vehicle garaging zip code to resolve Ohio territory factor (Cuyahoga 1.25, Franklin 1.10, Rural 0.85).",
+                    priority="High",
+                    citation=Citation(page_number=2, clause_reference="Clause 3.2", exact_quote="Territory Factor RF-2 is based on vehicle garaging zip code", confidence_score=0.96)
+                ),
+                FunctionalRequirementItem(
+                    req_id="REQ-003",
+                    title="Optional Roadside Assistance Endorsement Add-on",
+                    description="System must enable policyholder to select END-AUTO-01 for 24/7 towing up to 50 miles.",
+                    priority="Medium",
+                    citation=Citation(page_number=3, clause_reference="Endorsement END-AUTO-01", exact_quote="Provides towing up to 50 miles, battery jumpstarts, flat tire changes", confidence_score=0.97)
+                )
+            ],
+            non_functional_requirements=[
+                NonFunctionalRequirementItem(
+                    nfr_id="NFR-001",
+                    category="Latency",
+                    description="Rating engine calculation must execute in under 250 milliseconds p99."
+                ),
+                NonFunctionalRequirementItem(
+                    nfr_id="NFR-002",
+                    category="Auditability",
+                    description="Every underwriting rule decision and rating factor multiplier must be permanently logged for DOI audit."
+                )
+            ],
+            assumptions=[
+                "MVR (Motor Vehicle Record) integration provider is available via REST API.",
+                "USPS zip code database is updated monthly for territory mapping."
+            ],
+            open_questions=[
+                "Confirm whether electric vehicles receive a separate alternative fuel rating credit factor."
+            ]
+        )
+
+        user_stories = [
+            UserStoryItem(
+                story_id="US-001",
+                title="Driver Eligibility Screening at Quote Intake",
+                as_a="Prospective Policyholder",
+                i_want="to enter my driver license number and age during quote intake",
+                so_that="the system can verify my eligibility against Ohio underwriting guidelines",
+                linked_requirement_id="REQ-001",
+                acceptance_criteria=[
+                    AcceptanceCriterion(
+                        criterion_id="AC-01",
+                        scenario_title="Driver under 18 years of age",
+                        given="An applicant who is 17 years old",
+                        when="They submit their personal information for an auto quote",
+                        then="The system declines the quote with message: 'Minimum driver age requirement is 18 years'"
+                    ),
+                    AcceptanceCriterion(
+                        criterion_id="AC-02",
+                        scenario_title="Driver with clean record",
+                        given="An applicant aged 30 with 0 accidents in 36 months",
+                        when="They request a quote",
+                        then="The system approves them into the Tier 3 standard rating pool"
+                    )
+                ],
+                citations=[
+                    Citation(page_number=2, clause_reference="Rule UW-1", exact_quote="The minimum driver age is 18 years", confidence_score=0.99)
+                ]
+            ),
+            UserStoryItem(
+                story_id="US-002",
+                title="Territory Premium Calculation",
+                as_a="Rating Engine Microservice",
+                i_want="to look up the garaging zip code territory factor",
+                so_that="I can apply the approved Ohio DOI territory multiplier to the base premium",
+                linked_requirement_id="REQ-002",
+                acceptance_criteria=[
+                    AcceptanceCriterion(
+                        criterion_id="AC-03",
+                        scenario_title="Cleveland Metro Garaging Zip Code",
+                        given="A vehicle garaged in Cuyahoga County (Territory 01)",
+                        when="The rating algorithm computes the final quote",
+                        then="The base rate is multiplied by territory factor 1.25"
+                    )
+                ],
+                citations=[
+                    Citation(page_number=2, clause_reference="Clause 3.2", exact_quote="Territory Factor RF-2 is based on vehicle garaging zip code", confidence_score=0.96)
+                ]
+            )
+        ]
+
+        return RequirementsPackage(brd=brd, user_stories=user_stories)
