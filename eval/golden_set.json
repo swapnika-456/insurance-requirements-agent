@@ -1,0 +1,605 @@
+{
+  "version": "1.0.0",
+  "metadata": {
+    "description": "Benchmark evaluation dataset for Insurance Requirements Agent covering 3 Lines of Business (Auto, Homeowners, Life).",
+    "total_extractions": 40,
+    "total_requirements": 25,
+    "total_unanswerables": 10
+  },
+  "extraction_golden_set": [
+    {
+      "id": "EXT-AUTO-01",
+      "document_type": "Personal Auto",
+      "field": "product_name",
+      "expected_value": "Apex Personal Auto Policy",
+      "expected_clause": "Preamble / Schedule",
+      "expected_page": 1
+    },
+    {
+      "id": "EXT-AUTO-02",
+      "document_type": "Personal Auto",
+      "field": "line_of_business",
+      "expected_value": "Personal Auto",
+      "expected_clause": "Declarations",
+      "expected_page": 1
+    },
+    {
+      "id": "EXT-AUTO-03",
+      "document_type": "Personal Auto",
+      "field": "state_or_jurisdiction",
+      "expected_value": "Ohio",
+      "expected_clause": "Declarations",
+      "expected_page": 1
+    },
+    {
+      "id": "EXT-AUTO-04",
+      "document_type": "Personal Auto",
+      "field": "bodily_injury_split_limits",
+      "expected_value": "$250,000 per person / $500,000 per accident",
+      "expected_clause": "Part A - Liability Coverage",
+      "expected_page": 1
+    },
+    {
+      "id": "EXT-AUTO-05",
+      "document_type": "Personal Auto",
+      "field": "property_damage_limit",
+      "expected_value": "$100,000 per accident",
+      "expected_clause": "Part A - Liability Coverage",
+      "expected_page": 1
+    },
+    {
+      "id": "EXT-AUTO-06",
+      "document_type": "Personal Auto",
+      "field": "medical_payments_limit",
+      "expected_value": "$5,000 per person",
+      "expected_clause": "Part B - Medical Payments",
+      "expected_page": 2
+    },
+    {
+      "id": "EXT-AUTO-07",
+      "document_type": "Personal Auto",
+      "field": "uninsured_motorist_limit",
+      "expected_value": "$250,000 per person / $500,000 per accident",
+      "expected_clause": "Part C - Uninsured/Underinsured Motorists",
+      "expected_page": 2
+    },
+    {
+      "id": "EXT-AUTO-08",
+      "document_type": "Personal Auto",
+      "field": "collision_deductible",
+      "expected_value": "$500",
+      "expected_clause": "Part D - Coverage for Damage to Your Auto",
+      "expected_page": 2
+    },
+    {
+      "id": "EXT-AUTO-09",
+      "document_type": "Personal Auto",
+      "field": "comprehensive_deductible",
+      "expected_value": "$250",
+      "expected_clause": "Part D - Coverage for Damage to Your Auto",
+      "expected_page": 2
+    },
+    {
+      "id": "EXT-AUTO-10",
+      "document_type": "Personal Auto",
+      "field": "rideshare_exclusion",
+      "expected_value": "Commercial delivery or rideshare without explicit endorsement",
+      "expected_clause": "Part A Exclusions",
+      "expected_page": 1
+    },
+    {
+      "id": "EXT-AUTO-11",
+      "document_type": "Personal Auto",
+      "field": "roadside_towing_limit",
+      "expected_value": "$100 per disablement",
+      "expected_clause": "Endorsement PA-RS",
+      "expected_page": 3
+    },
+    {
+      "id": "EXT-AUTO-12",
+      "document_type": "Personal Auto",
+      "field": "rental_reimbursement_limit",
+      "expected_value": "$40 per day / $1,200 maximum",
+      "expected_clause": "Endorsement PA-RR",
+      "expected_page": 3
+    },
+    {
+      "id": "EXT-AUTO-13",
+      "document_type": "Personal Auto",
+      "field": "racing_exclusion",
+      "expected_value": "Organized racing, speed contests, or stunting events",
+      "expected_clause": "General Exclusions",
+      "expected_page": 2
+    },
+    {
+      "id": "EXT-AUTO-14",
+      "document_type": "Personal Auto",
+      "field": "cancellation_notice_period",
+      "expected_value": "10 days for non-payment, 30 days for underwriting reasons",
+      "expected_clause": "Part F - General Provisions",
+      "expected_page": 3
+    },
+    {
+      "id": "EXT-HOME-15",
+      "document_type": "Homeowners HO-3",
+      "field": "product_name",
+      "expected_value": "Horizon Homeowners HO-3 Special Form",
+      "expected_clause": "Declarations Page",
+      "expected_page": 1
+    },
+    {
+      "id": "EXT-HOME-16",
+      "document_type": "Homeowners HO-3",
+      "field": "line_of_business",
+      "expected_value": "Homeowners Property & Casualty",
+      "expected_clause": "Declarations Page",
+      "expected_page": 1
+    },
+    {
+      "id": "EXT-HOME-17",
+      "document_type": "Homeowners HO-3",
+      "field": "state_or_jurisdiction",
+      "expected_value": "Texas",
+      "expected_clause": "Declarations Page",
+      "expected_page": 1
+    },
+    {
+      "id": "EXT-HOME-18",
+      "document_type": "Homeowners HO-3",
+      "field": "coverage_a_dwelling_limit",
+      "expected_value": "$350,000",
+      "expected_clause": "Section I - Coverage A",
+      "expected_page": 1
+    },
+    {
+      "id": "EXT-HOME-19",
+      "document_type": "Homeowners HO-3",
+      "field": "coverage_b_other_structures",
+      "expected_value": "$35,000 (10% of Coverage A)",
+      "expected_clause": "Section I - Coverage B",
+      "expected_page": 1
+    },
+    {
+      "id": "EXT-HOME-20",
+      "document_type": "Homeowners HO-3",
+      "field": "coverage_c_personal_property",
+      "expected_value": "$175,000 (50% of Coverage A)",
+      "expected_clause": "Section I - Coverage C",
+      "expected_page": 1
+    },
+    {
+      "id": "EXT-HOME-21",
+      "document_type": "Homeowners HO-3",
+      "field": "coverage_d_loss_of_use",
+      "expected_value": "$70,000 (20% of Coverage A)",
+      "expected_clause": "Section I - Coverage D",
+      "expected_page": 1
+    },
+    {
+      "id": "EXT-HOME-22",
+      "document_type": "Homeowners HO-3",
+      "field": "coverage_e_personal_liability",
+      "expected_value": "$300,000",
+      "expected_clause": "Section II - Coverage E",
+      "expected_page": 2
+    },
+    {
+      "id": "EXT-HOME-23",
+      "document_type": "Homeowners HO-3",
+      "field": "coverage_f_medical_payments",
+      "expected_value": "$5,000 per person",
+      "expected_clause": "Section II - Coverage F",
+      "expected_page": 2
+    },
+    {
+      "id": "EXT-HOME-24",
+      "document_type": "Homeowners HO-3",
+      "field": "standard_deductible",
+      "expected_value": "$1,000",
+      "expected_clause": "Section I - Deductible Schedule",
+      "expected_page": 1
+    },
+    {
+      "id": "EXT-HOME-25",
+      "document_type": "Homeowners HO-3",
+      "field": "hurricane_deductible",
+      "expected_value": "2% of Coverage A ($7,000)",
+      "expected_clause": "Section I - Special Deductibles",
+      "expected_page": 2
+    },
+    {
+      "id": "EXT-HOME-26",
+      "document_type": "Homeowners HO-3",
+      "field": "flood_exclusion",
+      "expected_value": "Flood, surface water, waves, tidal water, and storm surge",
+      "expected_clause": "Section I - General Exclusions",
+      "expected_page": 2
+    },
+    {
+      "id": "EXT-HOME-27",
+      "document_type": "Homeowners HO-3",
+      "field": "earthquake_exclusion",
+      "expected_value": "Earthquake, landslide, mudflow, and earth sinkhole",
+      "expected_clause": "Section I - General Exclusions",
+      "expected_page": 2
+    },
+    {
+      "id": "EXT-HOME-28",
+      "document_type": "Homeowners HO-3",
+      "field": "water_backup_endorsement",
+      "expected_value": "$10,000 limit with $250 deductible",
+      "expected_clause": "Endorsement HO-WB",
+      "expected_page": 3
+    },
+    {
+      "id": "EXT-HOME-29",
+      "document_type": "Homeowners HO-3",
+      "field": "scheduled_personal_property",
+      "expected_value": "$15,000 scheduled jewelry and fine arts",
+      "expected_clause": "Endorsement HO-SP",
+      "expected_page": 3
+    },
+    {
+      "id": "EXT-LIFE-30",
+      "document_type": "Term Life",
+      "field": "product_name",
+      "expected_value": "Legacy Shield 20-Year Level Term Life Specification",
+      "expected_clause": "Product Overview",
+      "expected_page": 1
+    },
+    {
+      "id": "EXT-LIFE-31",
+      "document_type": "Term Life",
+      "field": "line_of_business",
+      "expected_value": "Individual Term Life",
+      "expected_clause": "Product Overview",
+      "expected_page": 1
+    },
+    {
+      "id": "EXT-LIFE-32",
+      "document_type": "Term Life",
+      "field": "min_face_amount",
+      "expected_value": "$100,000",
+      "expected_clause": "Underwriting Specifications",
+      "expected_page": 1
+    },
+    {
+      "id": "EXT-LIFE-33",
+      "document_type": "Term Life",
+      "field": "max_face_amount",
+      "expected_value": "$2,500,000",
+      "expected_clause": "Underwriting Specifications",
+      "expected_page": 1
+    },
+    {
+      "id": "EXT-LIFE-34",
+      "document_type": "Term Life",
+      "field": "minimum_issue_age",
+      "expected_value": "18",
+      "expected_clause": "Eligibility Criteria",
+      "expected_page": 1
+    },
+    {
+      "id": "EXT-LIFE-35",
+      "document_type": "Term Life",
+      "field": "maximum_issue_age",
+      "expected_value": "65",
+      "expected_clause": "Eligibility Criteria",
+      "expected_page": 1
+    },
+    {
+      "id": "EXT-LIFE-36",
+      "document_type": "Term Life",
+      "field": "term_duration",
+      "expected_value": "20 Years Level Premium",
+      "expected_clause": "Policy Schedule",
+      "expected_page": 1
+    },
+    {
+      "id": "EXT-LIFE-37",
+      "document_type": "Term Life",
+      "field": "suicide_clause_period",
+      "expected_value": "2 years contestability and suicide limitation",
+      "expected_clause": "General Provisions",
+      "expected_page": 2
+    },
+    {
+      "id": "EXT-LIFE-38",
+      "document_type": "Term Life",
+      "field": "grace_period",
+      "expected_value": "31 days grace period for premium payments",
+      "expected_clause": "Premium Provisions",
+      "expected_page": 2
+    },
+    {
+      "id": "EXT-LIFE-39",
+      "document_type": "Term Life",
+      "field": "accelerated_death_benefit",
+      "expected_value": "Up to 75% of face value or maximum $250,000 for terminal illness <= 12 months",
+      "expected_clause": "Rider TL-ADB",
+      "expected_page": 3
+    },
+    {
+      "id": "EXT-LIFE-40",
+      "document_type": "Term Life",
+      "field": "waiver_of_premium_rider",
+      "expected_value": "Premium waived upon total continuous disability exceeding 6 months",
+      "expected_clause": "Rider TL-WP",
+      "expected_page": 3
+    }
+  ],
+  "requirements_golden_set": [
+    {
+      "id": "REQ-EXP-01",
+      "document_type": "Personal Auto",
+      "category": "Rating Engine",
+      "title": "Split Limits Liability Rating Rule",
+      "must_cite_clause": "Part A - Liability Coverage",
+      "expected_gherkin_scenario": "Calculate split-limit bodily injury and property damage premiums"
+    },
+    {
+      "id": "REQ-EXP-02",
+      "document_type": "Personal Auto",
+      "category": "Underwriting Rule",
+      "title": "Rideshare Delivery Exclusion Enforcement",
+      "must_cite_clause": "Part A Exclusions",
+      "expected_gherkin_scenario": "Block or surcharge vehicle engaged in rideshare service without endorsement"
+    },
+    {
+      "id": "REQ-EXP-03",
+      "document_type": "Personal Auto",
+      "category": "Claims Service",
+      "title": "Roadside Towing Limit Adjudication",
+      "must_cite_clause": "Endorsement PA-RS",
+      "expected_gherkin_scenario": "Cap roadside reimbursement at $100 per disablement"
+    },
+    {
+      "id": "REQ-EXP-04",
+      "document_type": "Personal Auto",
+      "category": "Claims Service",
+      "title": "Collision Deductible Application",
+      "must_cite_clause": "Part D - Coverage for Damage to Your Auto",
+      "expected_gherkin_scenario": "Deduct $500 from approved physical damage repair settlement"
+    },
+    {
+      "id": "REQ-EXP-05",
+      "document_type": "Personal Auto",
+      "category": "Billing Engine",
+      "title": "Statutory Cancellation Notice Window",
+      "must_cite_clause": "Part F - General Provisions",
+      "expected_gherkin_scenario": "Issue notice 10 days prior for non-payment or 30 days for underwriting"
+    },
+    {
+      "id": "REQ-EXP-06",
+      "document_type": "Personal Auto",
+      "category": "Policy Admin",
+      "title": "Rental Reimbursement Per-Diem Cap",
+      "must_cite_clause": "Endorsement PA-RR",
+      "expected_gherkin_scenario": "Limit car rental to $40 daily and $1,200 aggregate"
+    },
+    {
+      "id": "REQ-EXP-07",
+      "document_type": "Personal Auto",
+      "category": "Underwriting Rule",
+      "title": "Household Driver Disclosure Requirement",
+      "must_cite_clause": "General Provisions",
+      "expected_gherkin_scenario": "Require endorsement for resident drivers residing over 60 days"
+    },
+    {
+      "id": "REQ-EXP-08",
+      "document_type": "Personal Auto",
+      "category": "Rating Engine",
+      "title": "Comprehensive Deductible Application",
+      "must_cite_clause": "Part D - Coverage for Damage to Your Auto",
+      "expected_gherkin_scenario": "Apply $250 deductible for non-collision animal strike or hail damage"
+    },
+    {
+      "id": "REQ-EXP-09",
+      "document_type": "Homeowners HO-3",
+      "category": "Rating Engine",
+      "title": "Dwelling Replacement Cost Coverage A",
+      "must_cite_clause": "Section I - Coverage A",
+      "expected_gherkin_scenario": "Rate base structural dwelling value up to $350,000"
+    },
+    {
+      "id": "REQ-EXP-10",
+      "document_type": "Homeowners HO-3",
+      "category": "Underwriting Rule",
+      "title": "Other Structures Percentage Formula",
+      "must_cite_clause": "Section I - Coverage B",
+      "expected_gherkin_scenario": "Derive Coverage B automatically as 10% of Coverage A ($35,000)"
+    },
+    {
+      "id": "REQ-EXP-11",
+      "document_type": "Homeowners HO-3",
+      "category": "Underwriting Rule",
+      "title": "Personal Property Percentage Formula",
+      "must_cite_clause": "Section I - Coverage C",
+      "expected_gherkin_scenario": "Derive Coverage C automatically as 50% of Coverage A ($175,000)"
+    },
+    {
+      "id": "REQ-EXP-12",
+      "document_type": "Homeowners HO-3",
+      "category": "Underwriting Rule",
+      "title": "Loss of Use Percentage Formula",
+      "must_cite_clause": "Section I - Coverage D",
+      "expected_gherkin_scenario": "Derive Coverage D automatically as 20% of Coverage A ($70,000)"
+    },
+    {
+      "id": "REQ-EXP-13",
+      "document_type": "Homeowners HO-3",
+      "category": "Claims Service",
+      "title": "Hurricane Percentage Deductible Calculator",
+      "must_cite_clause": "Section I - Special Deductibles",
+      "expected_gherkin_scenario": "Calculate 2% of Coverage A ($7,000) for named tropical storm damage"
+    },
+    {
+      "id": "REQ-EXP-14",
+      "document_type": "Homeowners HO-3",
+      "category": "Claims Service",
+      "title": "Standard All-Peril Property Deductible",
+      "must_cite_clause": "Section I - Deductible Schedule",
+      "expected_gherkin_scenario": "Withhold $1,000 base deductible on covered fire or wind losses"
+    },
+    {
+      "id": "REQ-EXP-15",
+      "document_type": "Homeowners HO-3",
+      "category": "Underwriting Rule",
+      "title": "Statutory Flood Peril Exclusion",
+      "must_cite_clause": "Section I - General Exclusions",
+      "expected_gherkin_scenario": "Disallow claims arising from surface runoff, rising river, or storm surge"
+    },
+    {
+      "id": "REQ-EXP-16",
+      "document_type": "Homeowners HO-3",
+      "category": "Claims Service",
+      "title": "Water Backup Sump Pump Limit",
+      "must_cite_clause": "Endorsement HO-WB",
+      "expected_gherkin_scenario": "Apply $10,000 sublimit and $250 deductible for sewer/drain backup"
+    },
+    {
+      "id": "REQ-EXP-17",
+      "document_type": "Homeowners HO-3",
+      "category": "Policy Admin",
+      "title": "Scheduled Personal Property Itemization",
+      "must_cite_clause": "Endorsement HO-SP",
+      "expected_gherkin_scenario": "Maintain scheduled floater registry for high-value fine arts and jewelry"
+    },
+    {
+      "id": "REQ-EXP-18",
+      "document_type": "Term Life",
+      "category": "Underwriting Rule",
+      "title": "Issue Age Eligibility Validation",
+      "must_cite_clause": "Eligibility Criteria",
+      "expected_gherkin_scenario": "Validate applicant age is between 18 and 65 years at policy issue"
+    },
+    {
+      "id": "REQ-EXP-19",
+      "document_type": "Term Life",
+      "category": "Underwriting Rule",
+      "title": "Face Amount Threshold Boundaries",
+      "must_cite_clause": "Underwriting Specifications",
+      "expected_gherkin_scenario": "Enforce minimum coverage of $100,000 and maximum of $2,500,000"
+    },
+    {
+      "id": "REQ-EXP-20",
+      "document_type": "Term Life",
+      "category": "Policy Admin",
+      "title": "Two-Year Incontestability and Suicide Defense",
+      "must_cite_clause": "General Provisions",
+      "expected_gherkin_scenario": "Refund paid premiums without death benefit if suicide occurs within 24 months"
+    },
+    {
+      "id": "REQ-EXP-21",
+      "document_type": "Term Life",
+      "category": "Billing Engine",
+      "title": "Grace Period Premium Lapse Prevention",
+      "must_cite_clause": "Premium Provisions",
+      "expected_gherkin_scenario": "Maintain active coverage during 31-day grace period post invoice due date"
+    },
+    {
+      "id": "REQ-EXP-22",
+      "document_type": "Term Life",
+      "category": "Claims Service",
+      "title": "Accelerated Death Benefit Terminal Illness Payout",
+      "must_cite_clause": "Rider TL-ADB",
+      "expected_gherkin_scenario": "Disburse up to 75% or max $250,000 on physician diagnosis of <= 12 months"
+    },
+    {
+      "id": "REQ-EXP-23",
+      "document_type": "Term Life",
+      "category": "Billing Engine",
+      "title": "Total Disability Waiver of Premium",
+      "must_cite_clause": "Rider TL-WP",
+      "expected_gherkin_scenario": "Waive monthly premiums following 6 consecutive months of qualified disability"
+    },
+    {
+      "id": "REQ-EXP-24",
+      "document_type": "Term Life",
+      "category": "Policy Admin",
+      "title": "Level Term 20-Year Guarantee Schedule",
+      "must_cite_clause": "Policy Schedule",
+      "expected_gherkin_scenario": "Fix premium rates without increase for exactly 240 policy months"
+    },
+    {
+      "id": "REQ-EXP-25",
+      "document_type": "Term Life",
+      "category": "Policy Admin",
+      "title": "Beneficiary Designation Registry",
+      "must_cite_clause": "General Provisions",
+      "expected_gherkin_scenario": "Record primary and contingent beneficiaries with percentage allocations"
+    }
+  ],
+  "negative_test_cases": [
+    {
+      "id": "NEG-01",
+      "document_type": "Homeowners HO-3",
+      "prompt": "What is the policy coverage limit and deductible for overland flood and rising river water?",
+      "expected_behavior": "REFUSAL_OR_EXCLUDED",
+      "expected_explanation": "Flood is explicitly excluded in Section I General Exclusions."
+    },
+    {
+      "id": "NEG-02",
+      "document_type": "Personal Auto",
+      "prompt": "What is the pet injury medical coverage limit under the auto policy?",
+      "expected_behavior": "NOT_FOUND_OR_NULL",
+      "expected_explanation": "Pet injury is not covered or mentioned in the auto policy document."
+    },
+    {
+      "id": "NEG-03",
+      "document_type": "Personal Auto",
+      "prompt": "What is the earthquake deductible for the vehicle?",
+      "expected_behavior": "NOT_FOUND_OR_NULL",
+      "expected_explanation": "Earthquake deductibles do not exist in personal auto comprehensive terms."
+    },
+    {
+      "id": "NEG-04",
+      "document_type": "Term Life",
+      "prompt": "What is the cash surrender value accumulation schedule after 10 years?",
+      "expected_behavior": "NOT_FOUND_OR_NULL",
+      "expected_explanation": "Term life policies have no cash surrender value accumulation."
+    },
+    {
+      "id": "NEG-05",
+      "document_type": "Homeowners HO-3",
+      "prompt": "What is the bodily injury split limit for commercial delivery on premises?",
+      "expected_behavior": "NOT_FOUND_OR_NULL",
+      "expected_explanation": "Homeowners HO-3 provides Section II Personal Liability with single aggregate, not commercial split limits."
+    },
+    {
+      "id": "NEG-06",
+      "document_type": "Term Life",
+      "prompt": "What is the deductible for accidental death claims?",
+      "expected_behavior": "NOT_FOUND_OR_NULL",
+      "expected_explanation": "Life insurance contracts do not have deductibles."
+    },
+    {
+      "id": "NEG-07",
+      "document_type": "Personal Auto",
+      "prompt": "What is the term life conversion rider specification?",
+      "expected_behavior": "NOT_FOUND_OR_NULL",
+      "expected_explanation": "Life insurance riders do not exist in personal auto policies."
+    },
+    {
+      "id": "NEG-08",
+      "document_type": "Homeowners HO-3",
+      "prompt": "What is the mechanical engine breakdown coverage limit?",
+      "expected_behavior": "NOT_FOUND_OR_NULL",
+      "expected_explanation": "Engine breakdown is an automobile concept, completely absent from HO-3."
+    },
+    {
+      "id": "NEG-09",
+      "document_type": "Term Life",
+      "prompt": "What is the collision repair deductible for terminal illness claims?",
+      "expected_behavior": "NOT_FOUND_OR_NULL",
+      "expected_explanation": "Collision repair is invalid for term life insurance."
+    },
+    {
+      "id": "NEG-10",
+      "document_type": "Homeowners HO-3",
+      "prompt": "What is the hurricane deductible for commercial cargo in transit?",
+      "expected_behavior": "NOT_FOUND_OR_NULL",
+      "expected_explanation": "Commercial cargo in transit is not covered under residential HO-3 forms."
+    }
+  ]
+}
