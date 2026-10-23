@@ -39,3 +39,16 @@ final dioProvider = Provider<Dio>((ref) {
 
   return dio;
 });
+
+class DioClient {
+  static final Dio _dio = Dio(
+    BaseOptions(
+      baseUrl: Endpoints.baseUrl,
+      connectTimeout: const Duration(seconds: 30),
+      receiveTimeout: const Duration(seconds: 45),
+      headers: {'Accept': 'application/json'},
+    ),
+  );
+
+  static Dio get instance => _dio;
+}

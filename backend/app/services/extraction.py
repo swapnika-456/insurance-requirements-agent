@@ -159,6 +159,29 @@ class ExtractionService:
         db.commit()
         db.refresh(record)
 
+        # Log AI generation event to immutable audit log
+        from app.services.audit import AuditService
+        AuditService().log_event(
+            db=db,
+            action="EXTRACTION_GENERATED",
+            actor="AI_SYSTEM",
+            target_type="EXTRACTION",
+            target_id=record.id,
+            document_id=doc.id,
+            document_name=doc.filename,
+            model_name=response.model_name,
+            prompt_version="v1.0",
+            input_tokens=response.prompt_tokens,
+            output_tokens=response.completion_tokens,
+            cached_tokens=response.cached_tokens,
+            cost_usd=response.cost_usd,
+            details={
+                "needs_review_count": needs_review_count,
+                "coverages_count": len(extracted_data.coverages),
+                "deductibles_count": len(extracted_data.deductibles)
+            }
+        )
+
         return ProductExtractionResponse(
             id=record.id,
             document_id=record.document_id,

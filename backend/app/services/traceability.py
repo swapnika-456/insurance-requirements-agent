@@ -223,6 +223,25 @@ class TraceabilityService:
         db.commit()
         db.refresh(record)
 
+        # Log Traceability generation to audit trail
+        from app.services.audit import AuditService
+        AuditService().log_event(
+            db=db,
+            action="TRACEABILITY_GENERATED",
+            actor="AI_SYSTEM",
+            target_type="TRACEABILITY_MATRIX",
+            target_id=record.id,
+            document_id=doc.id,
+            document_name=doc.filename,
+            model_name="deterministic_bipartite_engine",
+            details={
+                "coverage_percentage": coverage_pct,
+                "matrix_rows_count": len(matrix_rows),
+                "uncovered_clauses_count": len(uncovered_clauses),
+                "orphan_requirements_count": len(orphan_reqs)
+            }
+        )
+
         return TraceabilityMatrixResponse(
             id=record.id,
             document_id=record.document_id,

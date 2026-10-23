@@ -67,6 +67,190 @@ class _RequirementsScreenState extends ConsumerState<RequirementsScreen> with Si
     }
   }
 
+  Future<void> _submitReviewDecision({
+    required String targetType,
+    required String targetId,
+    required String decision,
+    String? reason,
+    Map<String, dynamic>? editPayload,
+  }) async {
+    final dio = ref.read(dioProvider);
+    try {
+      await dio.post('/review/decision', data: {
+        'target_type': targetType,
+        'target_id': targetId,
+        'decision': decision,
+        'reviewer_name': 'Senior Underwriting Analyst',
+        'reason': reason,
+        'edit_payload': editPayload,
+      });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('$targetType $targetId recorded as $decision.'),
+            backgroundColor: decision == 'APPROVED' ? const Color(0xFF059669) : (decision == 'REJECTED' ? const Color(0xFFDC2626) : const Color(0xFFD97706)),
+          ),
+        );
+        ref.invalidate(requirementsProvider(widget.documentId));
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to submit review: $e'), backgroundColor: Colors.red),
+        );
+      }
+    }
+  }
+
+  void _showEditDialog(String targetType, String targetId, String currentTitle, String currentDesc) {
+    final titleCtrl = TextEditingController(text: currentTitle);
+    final descCtrl = TextEditingController(text: currentDesc);
+    final reasonCtrl = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text('Edit $targetType ($targetId)'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: titleCtrl,
+                decoration: const InputDecoration(labelText: 'Title / Headline', border: OutlineInputBorder()),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: descCtrl,
+                maxLines: 3,
+                decoration: const InputDecoration(labelText: 'Description / Rule Text', border: OutlineInputBorder()),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: reasonCtrl,
+                decoration: const InputDecoration(labelText: 'Audit Justification (Required for compliance)', border: OutlineInputBorder()),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              _submitReviewDecision(
+                targetType: targetType,
+                targetId: targetId,
+                decision: 'EDITED',
+                reason: reasonCtrl.text.isEmpty ? 'Analyst manual override' : reasonCtrl.text,
+                editPayload: {
+                  'title': titleCtrl.text,
+                  'description': descCtrl.text,
+                },
+              );
+            },
+            child: const Text('Save & Audit Edit'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showRejectDialog(String targetType, String targetId) {
+    final reasonCtrl = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text('Reject $targetType ($targetId)'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text('Provide an underwriting or compliance rejection justification:'),
+            const SizedBox(height: 12),
+            TextField(
+              controller: reasonCtrl,
+              maxLines: 2,
+              decoration: const InputDecoration(labelText: 'Rejection Reason', border: OutlineInputBorder()),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            onPressed: () {
+              Navigator.pop(ctx);
+              _submitReviewDecision(
+                targetType: targetType,
+                targetId: targetId,
+                decision: 'REJECTED',
+                reason: reasonCtrl.text.isEmpty ? 'Rejected by underwriter' : reasonCtrl.text,
+              );
+            },
+            child: const Text('Confirm Rejection', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildReviewBar(String targetType, String targetId, String? currentStatus, String title, String desc) {
+    final status = currentStatus ?? 'DRAFT';
+    Color statusColor = const Color(0xFF64748B);
+    if (status == 'APPROVED') statusColor = const Color(0xFF059669);
+    if (status == 'REJECTED') statusColor = const Color(0xFFDC2626);
+    if (status == 'EDITED') statusColor = const Color(0xFFD97706);
+
+    return Container(
+      margin: const EdgeInsets.only(top: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8FAFC),
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+            decoration: BoxDecoration(
+              color: statusColor.withOpacity(0.12),
+              borderRadius: BorderRadius.circular(4),
+              border: Border.all(color: statusColor),
+            ),
+            child: Text(
+              status,
+              style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: statusColor),
+            ),
+          ),
+          const Spacer(),
+          TextButton.icon(
+            onPressed: () => _submitReviewDecision(
+              targetType: targetType,
+              targetId: targetId,
+              decision: 'APPROVED',
+              reason: 'Approved by Senior Underwriting Analyst',
+            ),
+            icon: const Icon(Icons.check_circle_outline, size: 16, color: Color(0xFF059669)),
+            label: const Text('Approve', style: TextStyle(fontSize: 11, color: Color(0xFF059669))),
+          ),
+          const SizedBox(width: 4),
+          TextButton.icon(
+            onPressed: () => _showEditDialog(targetType, targetId, title, desc),
+            icon: const Icon(Icons.edit_outlined, size: 16, color: Color(0xFFD97706)),
+            label: const Text('Edit', style: TextStyle(fontSize: 11, color: Color(0xFFD97706))),
+          ),
+          const SizedBox(width: 4),
+          TextButton.icon(
+            onPressed: () => _showRejectDialog(targetType, targetId),
+            icon: const Icon(Icons.cancel_outlined, size: 16, color: Color(0xFFDC2626)),
+            label: const Text('Reject', style: TextStyle(fontSize: 11, color: Color(0xFFDC2626))),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final reqAsync = ref.watch(requirementsProvider(widget.documentId));
@@ -244,35 +428,47 @@ class _RequirementsScreenState extends ConsumerState<RequirementsScreen> with Si
               ...frs.map((f) => Card(
                 child: Padding(
                   padding: const EdgeInsets.all(14),
-                  child: Row(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text('[${f['req_id']}] ${f['title']}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                                const SizedBox(width: 8),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                  decoration: BoxDecoration(
-                                    color: Colors.blue.shade50,
-                                    borderRadius: BorderRadius.circular(4),
-                                  ),
-                                  child: Text(
-                                    f['priority'] ?? 'High',
-                                    style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.blue.shade800),
-                                  ),
+                                Row(
+                                  children: [
+                                    Text('[${f['req_id']}] ${f['title']}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                                    const SizedBox(width: 8),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                      decoration: BoxDecoration(
+                                        color: Colors.blue.shade50,
+                                        borderRadius: BorderRadius.circular(4),
+                                      ),
+                                      child: Text(
+                                        f['priority'] ?? 'High',
+                                        style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.blue.shade800),
+                                      ),
+                                    ),
+                                  ],
                                 ),
+                                const SizedBox(height: 4),
+                                Text(f['description'] ?? '', style: const TextStyle(fontSize: 12, color: Color(0xFF475569))),
                               ],
                             ),
-                            const SizedBox(height: 4),
-                            Text(f['description'] ?? '', style: const TextStyle(fontSize: 12, color: Color(0xFF475569))),
-                          ],
-                        ),
+                          ),
+                          if (f['citation'] != null) _buildCitationWidget(f['citation']),
+                        ],
                       ),
-                      if (f['citation'] != null) _buildCitationWidget(f['citation']),
+                      _buildReviewBar(
+                        'REQUIREMENT',
+                        f['req_id'] ?? '',
+                        f['status'],
+                        f['title'] ?? '',
+                        f['description'] ?? '',
+                      ),
                     ],
                   ),
                 ),
@@ -445,6 +641,13 @@ class _RequirementsScreenState extends ConsumerState<RequirementsScreen> with Si
                 children: citations.map((c) => _buildCitationWidget(c)).toList(),
               ),
             ],
+            _buildReviewBar(
+              'USER_STORY',
+              id,
+              s['status'],
+              title,
+              'As a $asA, I want $iWant, so that $soThat',
+            ),
           ],
         ),
       ),

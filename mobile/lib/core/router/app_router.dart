@@ -10,6 +10,7 @@ import '../../features/upload/presentation/upload_screen.dart';
 import '../../features/product_detail/presentation/product_detail_screen.dart';
 import '../../features/requirements/presentation/requirements_screen.dart';
 import '../../features/traceability/presentation/traceability_screen.dart';
+import '../../features/audit/presentation/audit_screen.dart';
 
 final appRouter = GoRouter(
   initialLocation: '/',
@@ -17,6 +18,10 @@ final appRouter = GoRouter(
     GoRoute(
       path: '/',
       builder: (context, state) => const UploadScreen(),
+    ),
+    GoRoute(
+      path: '/audit',
+      builder: (context, state) => const AuditScreen(),
     ),
     GoRoute(
       path: '/product/:id',

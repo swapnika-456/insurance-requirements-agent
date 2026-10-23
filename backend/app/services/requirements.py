@@ -167,6 +167,28 @@ class RequirementsService:
         db.commit()
         db.refresh(record)
 
+        # Log AI generation event to immutable audit log
+        from app.services.audit import AuditService
+        AuditService().log_event(
+            db=db,
+            action="REQUIREMENTS_GENERATED",
+            actor="AI_SYSTEM",
+            target_type="REQUIREMENT_PACKAGE",
+            target_id=record.id,
+            document_id=doc.id,
+            document_name=doc.filename,
+            model_name=response.model_name,
+            prompt_version="v1.0",
+            input_tokens=response.prompt_tokens,
+            output_tokens=response.completion_tokens,
+            cached_tokens=response.cached_tokens,
+            cost_usd=response.cost_usd,
+            details={
+                "requirements_count": len(pkg.brd.functional_requirements),
+                "stories_count": len(pkg.user_stories)
+            }
+        )
+
         return RequirementsResponse(
             id=record.id,
             document_id=record.document_id,

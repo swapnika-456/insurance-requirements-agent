@@ -94,6 +94,11 @@ class _UploadScreenState extends ConsumerState<UploadScreen> {
         ),
         actions: [
           IconButton(
+            icon: const Icon(Icons.history_edu_outlined),
+            onPressed: () => context.go('/audit'),
+            tooltip: 'Governance Audit & Cost Analytics',
+          ),
+          IconButton(
             icon: const Icon(Icons.refresh),
             onPressed: () => ref.invalidate(documentsProvider),
             tooltip: 'Refresh documents',
@@ -283,15 +288,70 @@ class _UploadScreenState extends ConsumerState<UploadScreen> {
               ),
             ),
             StatusBadge(status: status),
-            const SizedBox(width: 12),
+            const SizedBox(width: 10),
             OutlinedButton(
               onPressed: () => context.go('/product/$docId'),
-              child: const Text('View Extraction'),
+              child: const Text('Extraction'),
             ),
-            const SizedBox(width: 8),
+            const SizedBox(width: 6),
             ElevatedButton(
               onPressed: () => context.go('/requirements/$docId'),
               child: const Text('Requirements'),
+            ),
+            const SizedBox(width: 6),
+            OutlinedButton(
+              onPressed: () => context.go('/traceability/$docId'),
+              style: OutlinedButton.styleFrom(foregroundColor: const Color(0xFF0F172A)),
+              child: const Text('Traceability'),
+            ),
+            const SizedBox(width: 6),
+            IconButton(
+              icon: const Icon(Icons.delete_outline, color: Colors.red),
+              tooltip: 'Delete document and cascade downstream data',
+              onPressed: () {
+                showDialog(
+                  context: context,
+                  builder: (ctx) => AlertDialog(
+                    title: const Text('Delete Document?'),
+                    content: Text(
+                      'Are you sure you want to delete "$filename"?\n\n'
+                      'This will permanently remove:\n'
+                      '• Physical PDF file on disk\n'
+                      '• Semantic clause chunks and embeddings\n'
+                      '• Extracted product parameters\n'
+                      '• Generated BRDs and User Stories\n'
+                      '• Bidirectional Traceability records\n\n'
+                      'Compliance Note: An immutable DOCUMENT_DELETED event will be logged in the audit trail.',
+                    ),
+                    actions: [
+                      TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+                      ElevatedButton(
+                        style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+                        onPressed: () async {
+                          Navigator.pop(ctx);
+                          try {
+                            final dio = ref.read(dioProvider);
+                            await dio.delete('/documents/$docId');
+                            ref.invalidate(documentsProvider);
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text('Document "$filename" successfully deleted.')),
+                              );
+                            }
+                          } catch (e) {
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text('Failed to delete document: $e'), backgroundColor: Colors.red),
+                              );
+                            }
+                          }
+                        },
+                        child: const Text('Delete Permanently', style: TextStyle(color: Colors.white)),
+                      ),
+                    ],
+                  ),
+                );
+              },
             ),
           ],
         ),

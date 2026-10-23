@@ -26,9 +26,11 @@ from app.api.v1.documents import router as documents_router
 from app.api.v1.extraction import router as extraction_router
 from app.api.v1.requirements import router as requirements_router
 from app.api.v1.traceability import router as traceability_router
+from app.api.v1.audit import router as audit_router
 from app.models.extraction import ProductExtractionRecord
 from app.models.requirement import RequirementPackageRecord
 from app.models.traceability import TraceabilityRecord
+from app.models.audit import AuditLogRecord
 
 
 @asynccontextmanager
@@ -71,6 +73,7 @@ app.include_router(documents_router, prefix="/api/v1")
 app.include_router(extraction_router, prefix="/api/v1")
 app.include_router(requirements_router, prefix="/api/v1")
 app.include_router(traceability_router, prefix="/api/v1")
+app.include_router(audit_router, prefix="/api/v1")
 
 
 @app.get("/", tags=["Health Check"])

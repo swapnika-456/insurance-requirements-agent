@@ -36,6 +36,10 @@ class FunctionalRequirementItem(BaseModel):
     description: str = Field(description="Detailed functional specification")
     priority: str = Field(default="High", description="Priority: 'High', 'Medium', or 'Low'")
     citation: Citation = Field(description="Provenance link to source policy clause")
+    status: Optional[str] = Field(default="DRAFT", description="Review status: 'DRAFT', 'APPROVED', 'EDITED', 'REJECTED'")
+    reviewed_by: Optional[str] = Field(default=None, description="Human reviewer name")
+    review_timestamp: Optional[str] = Field(default=None, description="Review timestamp")
+    review_reason: Optional[str] = Field(default=None, description="Review justification")
 
 
 class NonFunctionalRequirementItem(BaseModel):
@@ -70,6 +74,10 @@ class UserStoryItem(BaseModel):
         default_factory=list,
         description="Source citations supporting this story"
     )
+    status: Optional[str] = Field(default="DRAFT", description="Review status: 'DRAFT', 'APPROVED', 'EDITED', 'REJECTED'")
+    reviewed_by: Optional[str] = Field(default=None, description="Human reviewer name")
+    review_timestamp: Optional[str] = Field(default=None, description="Review timestamp")
+    review_reason: Optional[str] = Field(default=None, description="Review justification")
 
 
 class BusinessRequirementsDocument(BaseModel):

@@ -23,13 +23,19 @@ from sqlalchemy.orm import Session
 
 from app.core.config import settings
 from app.core.database import get_db
-from app.api.deps import get_ingestion_service
+from app.api.deps import get_ingestion_service, get_retrieval_service
 from app.models.document import Document, DocumentChunk
+from app.models.extraction import ProductExtractionRecord
+from app.models.requirement import RequirementPackageRecord
+from app.models.traceability import TraceabilityRecord
+from app.services.audit import AuditService
 from app.schemas.document import (
     DocumentResponse, DocumentDetailResponse, DocumentListResponse,
     ChunkResponse, DeleteDocumentResponse
 )
 from app.services.ingestion import IngestionService, IngestionError
+
+audit_service = AuditService()
 
 router = APIRouter(prefix="/documents", tags=["Documents"])
 
@@ -137,6 +143,24 @@ async def upload_document(
 
     # Convert chunks to response DTOs
     chunk_dtos = [ChunkResponse.model_validate(c) for c in doc_record.chunks]
+
+    # Log document ingestion event to audit trail
+    audit_service.log_event(
+        db=db,
+        action="DOCUMENT_INGESTED",
+        actor="AI_SYSTEM",
+        target_type="DOCUMENT",
+        target_id=doc_record.id,
+        document_id=doc_record.id,
+        document_name=doc_record.filename,
+        details={
+            "filename": doc_record.filename,
+            "page_count": doc_record.page_count,
+            "chunk_count": len(chunk_dtos),
+            "file_size_bytes": doc_record.file_size_bytes,
+            "line_of_business": doc_record.line_of_business
+        }
+    )
 
     return DocumentDetailResponse(
         id=doc_record.id,
@@ -251,9 +275,13 @@ def delete_document(
     db: Session = Depends(get_db)
 ):
     """
-    Deletes a document from the database and disk:
+    Deletes a document and executes complete cascading cleanup:
     1. Cascades deletion of all DocumentChunks in SQLite.
-    2. Deletes the underlying PDF file on disk.
+    2. Deletes downstream ProductExtractionRecords, RequirementPackageRecords,
+       and TraceabilityRecords.
+    3. Purges ChromaDB dense vector collections and BM25 memory indices.
+    4. Deletes the underlying PDF file on disk.
+    5. Writes an immutable DOCUMENT_DELETED event to the compliance audit log.
     """
     doc = db.query(Document).filter(Document.id == document_id).first()
     if not doc:
@@ -262,18 +290,46 @@ def delete_document(
             detail=f"Document with ID '{document_id}' not found."
         )
 
-    # Remove file on disk if it exists
-    if os.path.exists(doc.file_path):
+    doc_filename = doc.filename
+    doc_path = doc.file_path
+
+    # 1. Purge ChromaDB and BM25 indices
+    retrieval_svc = get_retrieval_service()
+    retrieval_svc.delete_document_index(document_id)
+
+    # 2. Delete downstream artifacts in SQLite
+    db.query(ProductExtractionRecord).filter(ProductExtractionRecord.document_id == document_id).delete()
+    db.query(RequirementPackageRecord).filter(RequirementPackageRecord.document_id == document_id).delete()
+    db.query(TraceabilityRecord).filter(TraceabilityRecord.document_id == document_id).delete()
+
+    # 3. Remove physical PDF file on disk
+    if os.path.exists(doc_path):
         try:
-            os.remove(doc.file_path)
+            os.remove(doc_path)
         except OSError:
             pass  # Continue to remove DB records even if disk unlink fails
 
+    # 4. Log immutable DOCUMENT_DELETED audit event
+    audit_service.log_event(
+        db=db,
+        action="DOCUMENT_DELETED",
+        actor="HUMAN_REVIEWER",
+        target_type="DOCUMENT",
+        target_id=document_id,
+        document_id=document_id,
+        document_name=doc_filename,
+        details={
+            "filename": doc_filename,
+            "status": "purged_from_disk_and_vector_store"
+        }
+    )
+
+    # 5. Delete document and chunks from SQLite
     db.delete(doc)
     db.commit()
 
     return DeleteDocumentResponse(
         success=True,
         document_id=document_id,
-        message=f"Document '{doc.filename}' and all associated chunks were successfully deleted."
+        message=f"Document '{doc_filename}' and all associated chunks were successfully deleted."
     )

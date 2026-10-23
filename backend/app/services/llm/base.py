@@ -28,6 +28,7 @@ class LLMResponse(BaseModel):
     content: str
     prompt_tokens: int = 0
     completion_tokens: int = 0
+    cached_tokens: int = 0
     total_tokens: int = 0
     cost_usd: float = 0.0
     model_name: str
@@ -41,6 +42,7 @@ class StructuredLLMResponse(BaseModel):
     data: Any
     prompt_tokens: int = 0
     completion_tokens: int = 0
+    cached_tokens: int = 0
     total_tokens: int = 0
     cost_usd: float = 0.0
     model_name: str
