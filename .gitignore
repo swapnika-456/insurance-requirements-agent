@@ -36,6 +36,7 @@ build/
 mobile/build/
 mobile/.dart_tool/
 flutter_application_1/
+smartMock/
 
 # IDE & Editor Configs
 .idea/
