@@ -175,6 +175,122 @@ async def upload_document(
     )
 
 
+@router.post(
+    "/sample/{sample_name}",
+    response_model=DocumentDetailResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Ingest one of the pre-generated synthetic sample documents"
+)
+def ingest_sample(
+    sample_name: str,
+    db: Session = Depends(get_db),
+    ingestion_service: IngestionService = Depends(get_ingestion_service)
+):
+    """
+    Ingests one of the pre-built carrier sample documents from the /samples directory.
+    """
+    mapping = {
+        "auto": "sample_auto_policy.pdf",
+        "homeowners": "sample_homeowners_policy.pdf",
+        "term_life": "sample_term_life_spec.pdf",
+        "life": "sample_term_life_spec.pdf"
+    }
+    filename = mapping.get(sample_name.lower())
+    if not filename:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Unknown sample '{sample_name}'. Choose from 'auto', 'homeowners', or 'term_life'."
+        )
+
+    # Search for samples folder
+    possible_paths = [
+        os.path.join(os.getcwd(), "samples", filename),
+        os.path.join(os.path.dirname(os.getcwd()), "samples", filename),
+        os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../..", "samples", filename))
+    ]
+    pdf_path = next((p for p in possible_paths if os.path.exists(p)), None)
+
+    if pdf_path and os.path.exists(pdf_path):
+        with open(pdf_path, "rb") as f:
+            content = f.read()
+    else:
+        from samples.generate_samples import (
+            generate_auto_policy_pdf, generate_homeowners_policy_pdf, generate_term_life_spec_pdf
+        )
+        if "auto" in sample_name.lower():
+            content = generate_auto_policy_pdf()
+        elif "homeowners" in sample_name.lower():
+            content = generate_homeowners_policy_pdf()
+        else:
+            content = generate_term_life_spec_pdf()
+
+    result = ingestion_service.ingest_pdf_bytes(content, filename)
+    os.makedirs(settings.UPLOAD_DIRECTORY, exist_ok=True)
+    saved_file_path = os.path.join(settings.UPLOAD_DIRECTORY, filename)
+    with open(saved_file_path, "wb") as f:
+        f.write(content)
+
+    doc_record = Document(
+        filename=filename,
+        file_path=saved_file_path,
+        file_size_bytes=result.file_size_bytes,
+        page_count=result.page_count,
+        line_of_business=result.line_of_business,
+        status="ingested"
+    )
+    db.add(doc_record)
+    db.flush()
+
+    chunk_records = []
+    for c in result.chunks:
+        chunk = DocumentChunk(
+            document_id=doc_record.id,
+            chunk_index=c.chunk_index,
+            page_number=c.page_number,
+            section_title=c.section_title,
+            parent_section=c.parent_section,
+            clause_reference=c.clause_reference,
+            text_content=c.text_content,
+            token_count=c.token_count
+        )
+        chunk_records.append(chunk)
+
+    db.add_all(chunk_records)
+    db.commit()
+    db.refresh(doc_record)
+
+    chunk_dtos = [ChunkResponse.model_validate(c) for c in doc_record.chunks]
+
+    audit_service.log_event(
+        db=db,
+        action="DOCUMENT_INGESTED",
+        actor="AI_SYSTEM",
+        target_type="DOCUMENT",
+        target_id=doc_record.id,
+        document_id=doc_record.id,
+        document_name=doc_record.filename,
+        details={
+            "filename": doc_record.filename,
+            "page_count": doc_record.page_count,
+            "chunk_count": len(chunk_dtos),
+            "file_size_bytes": doc_record.file_size_bytes,
+            "line_of_business": doc_record.line_of_business
+        }
+    )
+
+    return DocumentDetailResponse(
+        id=doc_record.id,
+        filename=doc_record.filename,
+        file_size_bytes=doc_record.file_size_bytes,
+        page_count=doc_record.page_count,
+        line_of_business=doc_record.line_of_business,
+        status=doc_record.status,
+        created_at=doc_record.created_at,
+        chunk_count=len(chunk_dtos),
+        chunks=chunk_dtos
+    )
+
+
 @router.get(
     "",
     response_model=DocumentListResponse,

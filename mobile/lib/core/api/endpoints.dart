@@ -10,6 +10,7 @@ class Endpoints {
 
   // Document ingestion routes
   static const String uploadDocument = '$baseUrl/documents/upload';
+  static String ingestSample(String type) => '$baseUrl/documents/sample/$type';
   static const String listDocuments = '$baseUrl/documents';
   static String getDocument(String id) => '$baseUrl/documents/$id';
   static String getDocumentChunks(String id) => '$baseUrl/documents/$id/chunks';

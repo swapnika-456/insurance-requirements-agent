@@ -9,6 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:dio/dio.dart';
+import 'package:file_picker/file_picker.dart';
 import '../../../core/api/dio_client.dart';
 import '../../../core/api/endpoints.dart';
 import '../../../shared/disclaimer_banner.dart';
@@ -44,24 +45,52 @@ class _UploadScreenState extends ConsumerState<UploadScreen> {
     final dio = ref.read(dioProvider);
 
     try {
-      // In web/desktop, simulate or send sample upload request to backend
-      // We can upload sample files or trigger standard test sample
-      FormData formData = FormData();
-      // For cross-platform demo convenience, upload synthetic test payload or call backend
-      formData.files.add(MapEntry(
-        'file',
-        MultipartFile.fromString(
-          "%PDF-1.4\nSynthetic Insurance Document Buffer\n%%EOF",
-          filename: 'sample_${sampleType}_policy.pdf',
-        ),
-      ));
-
-      await dio.post(Endpoints.uploadDocument, data: formData);
+      await dio.post(Endpoints.ingestSample(sampleType));
       ref.invalidate(documentsProvider);
     } catch (e) {
-      // If mock buffer rejected due to strict header, show user friendly message
       setState(() {
-        _uploadError = 'Sample trigger: Ensure backend is running at http://localhost:8000';
+        _uploadError = 'Sample ingestion error: $e. Ensure backend is running at http://localhost:8000';
+      });
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isUploading = false;
+        });
+        ref.invalidate(documentsProvider);
+      }
+    }
+  }
+
+  Future<void> _pickAndUploadCustomPdf() async {
+    setState(() {
+      _isUploading = true;
+      _uploadError = null;
+    });
+
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['pdf'],
+        withData: true,
+      );
+
+      if (result != null && result.files.isNotEmpty) {
+        final file = result.files.first;
+        final bytes = file.bytes;
+        if (bytes != null) {
+          final dio = ref.read(dioProvider);
+          final formData = FormData();
+          formData.files.add(MapEntry(
+            'file',
+            MultipartFile.fromBytes(bytes, filename: file.name),
+          ));
+          await dio.post(Endpoints.uploadDocument, data: formData);
+          ref.invalidate(documentsProvider);
+        }
+      }
+    } catch (e) {
+      setState(() {
+        _uploadError = 'File upload error: $e';
       });
     } finally {
       if (mounted) {
@@ -230,6 +259,11 @@ class _UploadScreenState extends ConsumerState<UploadScreen> {
                   onPressed: _isUploading ? null : () => _uploadSample('term_life'),
                   icon: const Icon(Icons.favorite, size: 16),
                   label: const Text('Term Life (TL-2026-IL)'),
+                ),
+                OutlinedButton.icon(
+                  onPressed: _isUploading ? null : _pickAndUploadCustomPdf,
+                  icon: const Icon(Icons.upload_file, size: 16),
+                  label: const Text('Upload PDF from Computer'),
                 ),
               ],
             ),
