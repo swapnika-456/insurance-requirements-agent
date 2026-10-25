@@ -33,7 +33,7 @@ class Settings(BaseSettings):
         UPLOAD_DIRECTORY: Local folder where ingested PDF files are stored.
         CORS_ORIGINS: Comma-separated list of allowed web/client origins.
     """
-    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
+    model_config = SettingsConfigDict(env_file=(".env", "../.env"), env_file_encoding="utf-8", extra="ignore")
 
     GEMINI_API_KEY: str = Field(default="", description="Gemini API Key")
     GEMINI_MODEL: str = Field(default="gemini-2.5-flash", description="Gemini model identifier")
