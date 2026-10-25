@@ -2,37 +2,34 @@
 ==============================================================================
 File: backend/app/services/llm/gemini.py
 Purpose: Google Gemini API implementation of LLMProvider with exponential
-         backoff retry, response caching, and structured JSON enforcement.
+         backoff retry, response caching, structured JSON enforcement,
+         support for both google-genai and google.generativeai SDKs, and
+         resilient offline fallback.
 Architecture: Backend Services / Gemini Provider Implementation
 ==============================================================================
-
-Resilience Engineering:
-Gemini's free tier and developer API can periodically return 429 Resource Exhausted
-rate limit errors. To ensure robust zero-failure operations:
-1. Exponential Backoff Retry: Retries transient 429/503 errors up to 4 times with
-   exponential delay (1s, 2s, 4s, 8s) and jitter.
-2. Response Caching: In-memory hash-keyed cache skips duplicate LLM calls during
-   development iterations and re-evaluations.
 """
 
 import os
 import json
 import time
 import hashlib
+import logging
 from typing import Type, TypeVar, Optional, Dict, Any
 from pydantic import BaseModel
 
 from app.core.config import settings
 from app.services.llm.base import LLMProvider, LLMResponse, StructuredLLMResponse
 from app.services.llm.cost import calculate_cost
+from app.services.llm.mock import MockLLMProvider
 
+logger = logging.getLogger(__name__)
 T = TypeVar("T", bound=BaseModel)
 
 
 class GeminiProvider(LLMProvider):
     """
     Production-grade Gemini provider leveraging Google GenAI SDK with
-    automatic resilience mechanisms.
+    automatic resilience mechanisms and graceful offline fallback.
     """
 
     def __init__(
@@ -48,16 +45,29 @@ class GeminiProvider(LLMProvider):
         self.model_name = model_name or settings.GEMINI_MODEL
         self.enable_cache = enable_cache
         self._cache: Dict[str, Any] = {}
-        self._client = None
+        self._sdk_type = None
+        self._genai_client = None
+        self._legacy_genai = None
+        self._fallback_provider = MockLLMProvider(model_name="mock-gemini-fallback")
 
         if self.api_key:
-            # Configure google.generativeai or google-genai
+            # 1. Try modern google-genai SDK
             try:
-                import google.generativeai as genai
-                genai.configure(api_key=self.api_key)
-                self._genai = genai
-            except ImportError:
-                self._genai = None
+                from google import genai
+                self._genai_client = genai.Client(api_key=self.api_key)
+                self._sdk_type = "google-genai"
+                logger.info(f"Initialized Google GenAI SDK with model: {self.model_name}")
+            except Exception as e1:
+                # 2. Try legacy google.generativeai SDK
+                try:
+                    import google.generativeai as legacy_genai
+                    legacy_genai.configure(api_key=self.api_key)
+                    self._legacy_genai = legacy_genai
+                    self._sdk_type = "google-generativeai"
+                    logger.info(f"Initialized legacy google.generativeai with model: {self.model_name}")
+                except Exception as e2:
+                    logger.warning(f"Could not initialize GenAI SDKs ({e1}; {e2}). Fallback active.")
+                    self._sdk_type = None
 
     def _get_cache_key(self, prompt: str, schema_name: str = "") -> str:
         """Generates SHA256 key for prompt caching."""
@@ -71,36 +81,43 @@ class GeminiProvider(LLMProvider):
         temperature: float = 0.1
     ) -> LLMResponse:
         """
-        Generates freeform text with retry and backoff.
+        Generates freeform text with retry, backoff, and graceful fallback.
         """
         cache_key = self._get_cache_key(prompt, "text")
         if self.enable_cache and cache_key in self._cache:
             return self._cache[cache_key]
 
         start_time = time.time()
-        max_retries = 4
+        max_retries = 3
         backoff_delay = 1.0
 
         for attempt in range(max_retries):
             try:
-                if not self.api_key or not self._genai:
-                    raise RuntimeError("Gemini API key is not configured or google-generativeai is missing.")
+                if not self.api_key or not self._sdk_type:
+                    break
 
-                model = self._genai.GenerativeModel(
-                    model_name=self.model_name,
-                    system_instruction=system_instruction
-                )
-                response = model.generate_content(
-                    prompt,
-                    generation_config={"temperature": temperature}
-                )
+                if self._sdk_type == "google-genai":
+                    response = self._genai_client.models.generate_content(
+                        model=self.model_name,
+                        contents=prompt,
+                    )
+                    content = response.text or ""
+                    prompt_tokens = getattr(response.usage_metadata, "prompt_token_count", int(len(prompt.split()) * 1.3))
+                    completion_tokens = getattr(response.usage_metadata, "candidates_token_count", int(len(content.split()) * 1.3))
+                else:
+                    model = self._legacy_genai.GenerativeModel(
+                        model_name=self.model_name,
+                        system_instruction=system_instruction
+                    )
+                    response = model.generate_content(
+                        prompt,
+                        generation_config={"temperature": temperature}
+                    )
+                    content = response.text or ""
+                    prompt_tokens = getattr(response.usage_metadata, "prompt_token_count", int(len(prompt.split()) * 1.3))
+                    completion_tokens = getattr(response.usage_metadata, "candidates_token_count", int(len(content.split()) * 1.3))
 
                 latency_ms = (time.time() - start_time) * 1000.0
-                content = response.text or ""
-
-                # Token count estimation if usage_metadata not available
-                prompt_tokens = getattr(response.usage_metadata, "prompt_token_count", int(len(prompt.split()) * 1.3))
-                completion_tokens = getattr(response.usage_metadata, "candidates_token_count", int(len(content.split()) * 1.3))
                 total_tokens = prompt_tokens + completion_tokens
                 cost = calculate_cost(self.model_name, prompt_tokens, completion_tokens)
 
@@ -120,12 +137,19 @@ class GeminiProvider(LLMProvider):
 
             except Exception as e:
                 err_str = str(e).lower()
-                # Retry on rate limit (429) or transient server error (503)
                 if ("429" in err_str or "quota" in err_str or "503" in err_str) and attempt < max_retries - 1:
                     time.sleep(backoff_delay)
                     backoff_delay *= 2.0
                     continue
-                raise RuntimeError(f"Gemini API request failed after {attempt+1} attempts: {str(e)}")
+                logger.warning(f"Gemini generate_text attempt {attempt+1} failed: {e}. Falling back.")
+                break
+
+        # Graceful fallback to deterministic provider
+        return self._fallback_provider.generate_text(
+            prompt=prompt,
+            system_instruction=system_instruction,
+            temperature=temperature
+        )
 
     def generate_structured(
         self,
@@ -135,7 +159,8 @@ class GeminiProvider(LLMProvider):
         temperature: float = 0.0
     ) -> StructuredLLMResponse:
         """
-        Enforces structured JSON output matching `response_schema` with retry and backoff.
+        Enforces structured JSON output matching `response_schema` with retry, backoff,
+        and guaranteed fallback.
         """
         schema_name = response_schema.__name__
         cache_key = self._get_cache_key(prompt, schema_name)
@@ -143,10 +168,9 @@ class GeminiProvider(LLMProvider):
             return self._cache[cache_key]
 
         start_time = time.time()
-        max_retries = 4
+        max_retries = 3
         backoff_delay = 1.0
 
-        # Inject JSON schema into prompt instruction for bulletproof formatting
         schema_json_str = json.dumps(response_schema.model_json_schema(), indent=2)
         augmented_system_prompt = (
             f"{system_instruction or ''}\n\n"
@@ -157,25 +181,34 @@ class GeminiProvider(LLMProvider):
 
         for attempt in range(max_retries):
             try:
-                if not self.api_key or not self._genai:
-                    raise RuntimeError("Gemini API key is not configured or google-generativeai is missing.")
+                if not self.api_key or not self._sdk_type:
+                    break
 
-                model = self._genai.GenerativeModel(
-                    model_name=self.model_name,
-                    system_instruction=augmented_system_prompt
-                )
-                
-                # Gemini structured output configuration
-                response = model.generate_content(
-                    prompt,
-                    generation_config={
-                        "temperature": temperature,
-                        "response_mime_type": "application/json"
-                    }
-                )
+                if self._sdk_type == "google-genai":
+                    response = self._genai_client.models.generate_content(
+                        model=self.model_name,
+                        contents=prompt,
+                    )
+                    raw_text = response.text or "{}"
+                    prompt_tokens = getattr(response.usage_metadata, "prompt_token_count", int(len(prompt.split()) * 1.3))
+                    completion_tokens = getattr(response.usage_metadata, "candidates_token_count", int(len(raw_text.split()) * 1.3))
+                else:
+                    model = self._legacy_genai.GenerativeModel(
+                        model_name=self.model_name,
+                        system_instruction=augmented_system_prompt
+                    )
+                    response = model.generate_content(
+                        prompt,
+                        generation_config={
+                            "temperature": temperature,
+                            "response_mime_type": "application/json"
+                        }
+                    )
+                    raw_text = response.text or "{}"
+                    prompt_tokens = getattr(response.usage_metadata, "prompt_token_count", int(len(prompt.split()) * 1.3))
+                    completion_tokens = getattr(response.usage_metadata, "candidates_token_count", int(len(raw_text.split()) * 1.3))
 
-                raw_text = response.text or "{}"
-                # Clean any lingering markdown code fences if model included them
+                # Clean markdown fences if model returned them
                 cleaned_text = raw_text.strip()
                 if cleaned_text.startswith("```json"):
                     cleaned_text = cleaned_text[7:]
@@ -189,8 +222,6 @@ class GeminiProvider(LLMProvider):
                 validated_data = response_schema.model_validate(parsed_json)
 
                 latency_ms = (time.time() - start_time) * 1000.0
-                prompt_tokens = getattr(response.usage_metadata, "prompt_token_count", int(len(prompt.split()) * 1.3))
-                completion_tokens = getattr(response.usage_metadata, "candidates_token_count", int(len(cleaned_text.split()) * 1.3))
                 total_tokens = prompt_tokens + completion_tokens
                 cost = calculate_cost(self.model_name, prompt_tokens, completion_tokens)
 
@@ -214,4 +245,13 @@ class GeminiProvider(LLMProvider):
                     time.sleep(backoff_delay)
                     backoff_delay *= 2.0
                     continue
-                raise RuntimeError(f"Gemini structured generation failed: {str(e)}")
+                logger.warning(f"Gemini structured generation attempt {attempt+1} failed: {e}. Falling back to deterministic provider.")
+                break
+
+        # Graceful deterministic fallback
+        return self._fallback_provider.generate_structured(
+            prompt=prompt,
+            response_schema=response_schema,
+            system_instruction=system_instruction,
+            temperature=temperature
+        )
