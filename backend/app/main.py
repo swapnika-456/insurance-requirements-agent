@@ -59,10 +59,10 @@ app = FastAPI(
     lifespan=lifespan
 )
 
-# Configure Cross-Origin Resource Sharing (CORS) so Flutter Web and mobile clients can interact
+# Configure Cross-Origin Resource Sharing (CORS) so Flutter Web on any dynamic port can interact
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.cors_origins_list or ["*"],
+    allow_origin_regex=r"^https?://(localhost|127\.0\.0\.1)(:\d+)?$",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
